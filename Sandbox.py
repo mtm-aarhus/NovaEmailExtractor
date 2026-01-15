@@ -1,4 +1,3 @@
-from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
 from GetKmdAcessToken import GetKMDToken
 import requests
 import os
@@ -7,12 +6,13 @@ from datetime import datetime, timedelta
 import json
 import pandas as pd
 import re
-orchestrator_connection = OrchestratorConnection("Henter Assets", os.getenv('OpenOrchestratorSQL'),os.getenv('OpenOrchestratorKey'), None)
+from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
+orchestrator_connection = OrchestratorConnection("AktbobGenererAktindsigter", os.getenv('OpenOrchestratorSQL'),os.getenv('OpenOrchestratorKey'), None,None)
 # ---- Henter assests og credentials -----
 KMDNovaURL = orchestrator_connection.get_constant("KMDNovaURL").value
 
   # ---- Henter access tokens ----
-KMD_access_token = GetKMDToken()
+KMD_access_token = GetKMDToken(orchestrator_connection)
 
 
 
