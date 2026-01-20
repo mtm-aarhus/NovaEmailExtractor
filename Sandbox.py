@@ -80,25 +80,32 @@ def upload_to_sharepoint(client: ClientContext, folder_name: str, file_path: str
 
 # ---- Henter Sagsnummer og Sagsbeskrivelse ---- 
 TransactionID = str(uuid.uuid4())
-CurrentDate = datetime.now().strftime("%Y-%m-%dT00:00:00")
+EndFromDate = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00")
 FromDate = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%dT00:00:00")
 
 
 payload = {
     "common": {"transactionId": TransactionID},
     "paging": {"startRow": 1, "numberOfRows": 500},
-"buildingCase":{
-    "buildingCaseAttributes":{
-        "buildingCaseClassName":"Forhåndsdialog",
-        "applicationStatusDates":{
-            "fromCloseDate": FromDate ,
-            "toCloseDate": CurrentDate
-        }
-}
-},
 "state": {
     "progressState": "Afsluttet"
 },
+"states": {
+  "startFromDate": FromDate,
+  "endFromDate": EndFromDate,
+  "states": [
+    {
+      "progressState": "Afsluttet"
+    }
+  ]
+},
+
+"buildingCase":{
+    "buildingCaseAttributes":{
+        "buildingCaseClassName":"Forhåndsdialog"
+}
+},
+
   "caseGetOutput": {
     "caseAttributes": {
       "userFriendlyCaseNumber": True,
@@ -119,6 +126,11 @@ headers = {
     "Content-Type": "application/json"
 }
 
+REMOVE_TITLE_REGEX = re.compile(
+    r"(Fejloprettet|Afsluttet\s+mangler\s+fuldmagt)",
+    re.IGNORECASE
+)
+
 # Define the API endpoint
 url = f"{KMDNovaURL}/Case/GetList?api-version=2.0-Case"
 # Make the HTTP request
@@ -134,11 +146,16 @@ try:
 
         # Initialize an empty list to store queue items
     Cases = []
-    # Iterate through cases
+
     for case in data.get("cases", []):
-        case_uuid = case.get("common", {}).get("uuid", "Unknown")
+        case_uuid = case.get("common", {}).get("uuid")
         case_number = case.get("caseAttributes", {}).get("userFriendlyCaseNumber", "Unknown")
-        case_title = case.get("caseAttributes", {}).get("title")
+        case_title = case.get("caseAttributes", {}).get("title", "")
+
+        # Skip unwanted titles (case-insensitive)
+        if case_title and REMOVE_TITLE_REGEX.search(case_title):
+            print(f"Removing casenumber {case_number} - because of title: {case_title}")
+            continue
 
         if case_uuid:
             Cases.append({
@@ -146,12 +163,14 @@ try:
                 "CaseNumber": case_number,
                 "CaseTitle": case_title
             })
-
 except requests.exceptions.RequestException as e:
     print("Request Failed:", e)
 
 
-EMAIL_REGEX = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+
+
+#EMAIL_REGEX = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
+EMAIL_REGEX = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+",re.UNICODE)
 all_emails = []
 
 # Now iterate through the casesUuid's and get the emails: 
@@ -159,7 +178,7 @@ all_emails = []
 for case in Cases:
     case_uuid = case["CaseUuid"]
     transaction_id = str(uuid.uuid4())
-
+    email_found = False  # <-- IMPORTANT
     payload_case_party = {
         "common": {
             "transactionId": transaction_id,
@@ -203,21 +222,25 @@ for case in Cases:
                     emails = EMAIL_REGEX.findall(contact_info)
 
                     if emails:
-                                email = emails[0]  # <-- take only the first email
+                        email = emails[0]  # take only the first email
 
-                                print(f"CaseNumber: {case.get('CaseNumber')} | Email: {email}")
+                        print(f"CaseNumber: {case.get('CaseNumber')} | Email: {email}")
 
-                                all_emails.append({
-                                    "CaseUuid": case_uuid,
-                                    "CaseNumber": case.get("CaseNumber"),
-                                    "Email": email
-                                })
+                        all_emails.append({
+                            "CaseUuid": case_uuid,
+                            "CaseNumber": case.get("CaseNumber"),
+                            "Email": email
+                        })
 
-                                email_found = True
-                                break  # stop iterating parties
+                        email_found = True
+                        break  # stop iterating parties
 
-                    if email_found:
-                        break  # stop iterating cases (defensive)
+            if email_found:
+                break  # stop iterating cases (defensive)
+
+        # THIS goes here — outside both loops
+        if not email_found:
+            print(f"CaseNumber: {case.get('CaseNumber')} | Email NOT FOUND")
 
     except requests.exceptions.RequestException as e:
         print(f"Failed for case {case.get('CaseNumber')} ({case_uuid}): {e}")
