@@ -16,6 +16,7 @@ orchestrator_connection = OrchestratorConnection("AktbobGenererAktindsigter", os
 # ---- Henter assests og credentials -----
 KMDNovaURL = orchestrator_connection.get_constant("KMDNovaURL").value
 SharepointUrl = orchestrator_connection.get_constant('AarhusKommuneSharepoint').value
+SharepointUrl = orchestrator_connection.get_constant('AarhusKommuneSharepoint').value
 
   # ---- Henter access tokens ----
 KMD_access_token = GetKMDToken(orchestrator_connection)
@@ -80,9 +81,10 @@ def upload_to_sharepoint(client: ClientContext, folder_name: str, file_path: str
 
 # ---- Henter Sagsnummer og Sagsbeskrivelse ---- 
 TransactionID = str(uuid.uuid4())
-EndFromDate = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00")
-FromDate = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%dT00:00:00")
-
+EndDate = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00")
+#FromDate = (datetime.now() - timedelta(days=14)).strftime("%Y-%m-%dT00:00:00")
+FromDate = orchestrator_connection.get_constant('NovaEmailExtrator_Timestamp').value
+print(FromDate)
 
 payload = {
     "common": {"transactionId": TransactionID},
@@ -92,7 +94,7 @@ payload = {
 },
 "states": {
   "startFromDate": FromDate,
-  "endFromDate": EndFromDate,
+  "endFromDate": EndDate,
   "states": [
     {
       "progressState": "Afsluttet"
@@ -304,3 +306,6 @@ client = sharepoint_client(tenant, client_id, thumbprint, cert_path, f'{Sharepoi
 
 upload_to_sharepoint(client= client, folder_name = 'Delte Dokumenter', file_path=output_path, folder_url= '/Teams/tea-teamsite11160/Delte Dokumenter')
 orchestrator_connection.log_info(f'Uploaded to {file_url}')
+
+#Opdaterer timestamp: 
+orchestrator_connection.update_constant("NovaEmailExtrator_Timestamp",datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
