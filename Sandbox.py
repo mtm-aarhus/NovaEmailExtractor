@@ -6,77 +6,19 @@ from datetime import datetime, timedelta
 import json
 import pandas as pd
 import re
-from openpyxl import Workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
-from office365.sharepoint.client_context import ClientContext
-from office365.runtime.auth.user_credential import UserCredential
+
+import time
+from requests.auth import HTTPBasicAuth
 orchestrator_connection = OrchestratorConnection("AktbobGenererAktindsigter", os.getenv('OpenOrchestratorSQL'),os.getenv('OpenOrchestratorKey'), None,None)
 # ---- Henter assests og credentials -----
 KMDNovaURL = orchestrator_connection.get_constant("KMDNovaURL").value
-SharepointUrl = orchestrator_connection.get_constant('AarhusKommuneSharepoint').value
-SharepointUrl = orchestrator_connection.get_constant('AarhusKommuneSharepoint').value
+SurveyXact = orchestrator_connection.get_credential("SurveyXact")
+SurveyXact_password = SurveyXact.password
+SurveyXact_unsername = SurveyXact.username
 
   # ---- Henter access tokens ----
 KMD_access_token = GetKMDToken(orchestrator_connection)
-
-
-def sharepoint_client(tenant: str, client_id: str, thumbprint: str, cert_path: str, sharepoint_site_url: str, orchestrator_connection: OrchestratorConnection) -> ClientContext:
-        """
-        Creates and returns a SharePoint client context.
-        """
-        # Authenticate to SharePoint
-        cert_credentials = {
-            "tenant": tenant,
-            "client_id": client_id,
-            "thumbprint": thumbprint,
-            "cert_path": cert_path
-        }
-        ctx = ClientContext(sharepoint_site_url).with_client_certificate(**cert_credentials)
-
-        # Load and verify connection
-        web = ctx.web
-        ctx.load(web)
-        ctx.execute_query()
-
-        orchestrator_connection.log_info(f"Authenticated successfully. Site Title: {web.properties['Title']}")
-        return ctx
-
-def upload_to_sharepoint(client: ClientContext, folder_name: str, file_path: str, folder_url: str):
-            """
-            Uploads a file to a specific folder in a SharePoint document library.
-
-            :param client: Authenticated SharePoint client context
-            :param folder_name: Name of the target folder within the document library
-            :param file_path: Local file path to upload
-            :param folder_url: SharePoint folder URL where the file should be uploaded
-            """
-            try:
-                # Extract file name safely
-                file_name = os.path.basename(file_path)
-
-                # Define the SharePoint document library structure
-                document_library = f"{folder_url.split('/', 1)[-1]}"
-                folder_path = f"{document_library}/{folder_name}"
-
-                # Read file into memory (Prevents closed file issue)
-                with open(file_path, "rb") as file:
-                    file_content = file.read()  
-
-                # Get SharePoint folder reference
-                target_folder = client.web.get_folder_by_server_relative_url(folder_url)
-
-                # Upload file using byte content
-                target_folder.upload_file(file_name, file_content)
-                
-                # Execute request
-                client.execute_query()
-                orchestrator_connection.log_info(f"✅ Successfully uploaded: {file_name} to {folder_path}")
-
-            except Exception as e:
-                orchestrator_connection.log_info(f"❌ Error uploading file: {str(e)}")
-
 
 
 # ---- Henter Sagsnummer og Sagsbeskrivelse ---- 
@@ -169,9 +111,6 @@ except requests.exceptions.RequestException as e:
     print("Request Failed:", e)
 
 
-
-
-#EMAIL_REGEX = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 EMAIL_REGEX = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+",re.UNICODE)
 all_emails = []
 
@@ -180,7 +119,7 @@ all_emails = []
 for case in Cases:
     case_uuid = case["CaseUuid"]
     transaction_id = str(uuid.uuid4())
-    email_found = False  # <-- IMPORTANT
+    email_found = False  
     payload_case_party = {
         "common": {
             "transactionId": transaction_id,
@@ -220,18 +159,19 @@ for case in Cases:
             for party in case_item.get("caseParties", []):
                 if party.get("partyRole") == "IND":
                     contact_info = party.get("participantContactInformation", "")
-
+                    IndsenderName = party.get("name")
                     emails = EMAIL_REGEX.findall(contact_info)
 
                     if emails:
                         email = emails[0]  # take only the first email
 
-                        print(f"CaseNumber: {case.get('CaseNumber')} | Email: {email}")
+                        print(f"CaseNumber: {case.get('CaseNumber')} | Email: {email}| Name: {IndsenderName}")
 
                         all_emails.append({
                             "CaseUuid": case_uuid,
                             "CaseNumber": case.get("CaseNumber"),
-                            "Email": email
+                            "Email": email,
+                            "Name":IndsenderName
                         })
 
                         email_found = True
@@ -247,65 +187,57 @@ for case in Cases:
     except requests.exceptions.RequestException as e:
         print(f"Failed for case {case.get('CaseNumber')} ({case_uuid}): {e}")
 
-# Create workbook and worksheet
-wb = Workbook()
-ws = wb.active
-ws.title = "Indsender emails"
+# ---- TEST EMAILS (override production list) ----
+test_emails = [
+    {
+        "Email": "Gujc@aarhus.dk",
+        "CaseNumber": "TEST-001",
+        "Name": "Gustav Chatterton"
+    }
+]
 
-# Styles
-header_font = Font(bold=True, color="FFFFFF")
-header_fill = PatternFill(start_color="305496", end_color="305496", fill_type="solid")
-header_alignment = Alignment(horizontal="center", vertical="center")
-thin_border = Border(
-    left=Side(style="thin"),
-    right=Side(style="thin"),
-    top=Side(style="thin"),
-    bottom=Side(style="thin")
-)
+# ----- Opretter timestamps ------ 
+current_ts = int(time.time())      # current epoch time in seconds
+ts_plus_5_min = current_ts + 2 * 60
+ts_plus_1_week = current_ts + 7 * 24 * 60 * 60
+distributionTs = 1
+print(ts_plus_5_min)
+print(ts_plus_1_week)
 
-# Headers
-headers = ["Case number", "Email"]
+# --- endpoint ---
+survey_url = "https://rest.survey-xact.dk/rest/surveys/1792115/respondents"
 
-for col, header in enumerate(headers, start=1):
-    cell = ws.cell(row=1, column=col, value=header)
-    cell.font = header_font
-    cell.fill = header_fill
-    cell.alignment = header_alignment
-    cell.border = thin_border
+params = {
+    "distributionTs": distributionTs,
+    "reminder1Ts": ts_plus_5_min
+}
 
-# Data rows
-for row_idx, item in enumerate(all_emails, start=2):
-    ws.cell(row=row_idx, column=1, value=item["CaseNumber"]).border = thin_border
-    ws.cell(row=row_idx, column=2, value=item["Email"]).border = thin_border
+for item in test_emails:
+    email = item["Email"]
+    Name = item["Name"]
 
-# Column widths
-ws.column_dimensions["A"].width = 20
-ws.column_dimensions["B"].width = 35
+    payload = {
+        "email": email,
+        "b_1": Name  
+    }
 
-# Freeze header row
-ws.freeze_panes = "A2"
+    try:
+        response = requests.post(
+            survey_url,
+            params=params,
+            data=payload,
+            auth=HTTPBasicAuth(SurveyXact_unsername, SurveyXact_password),
+            timeout=10
+        )
 
-# Save file
-output_path = "Indsender_emails.xlsx"
-wb.save(output_path)
+        if response.status_code in (200, 201):
+            print(f" Survey sent to {email} (Case {case_number})")
+        else:
+            print(f"Failed for {email} | Status: {response.status_code}")
+            print(response.text)
 
-print(f"Excel file created: {output_path}")
-
-orchestrator_connection.log_info('Overfører excelfil til sharepoint')
-file_url = f'{SharepointUrl}/Teams/sec-lukket1752/Delte Dokumenter'
-
-certification = orchestrator_connection.get_credential("SharePointCert")
-api = orchestrator_connection.get_credential("SharePointAPI")
-
-tenant = api.username
-client_id = api.password
-thumbprint = certification.username
-cert_path = certification.password
-
-client = sharepoint_client(tenant, client_id, thumbprint, cert_path, f'{SharepointUrl}/Teams/tea-teamsite11160/', orchestrator_connection)
-
-upload_to_sharepoint(client= client, folder_name = 'Delte Dokumenter', file_path=output_path, folder_url= '/Teams/tea-teamsite11160/Delte Dokumenter')
-orchestrator_connection.log_info(f'Uploaded to {file_url}')
+    except requests.exceptions.RequestException as e:
+        print(f"Error sending survey to {email}: {e}")
 
 #Opdaterer timestamp: 
 orchestrator_connection.update_constant("NovaEmailExtrator_Timestamp",datetime.now().strftime("%Y-%m-%dT%H:%M:%S"))
