@@ -7,9 +7,9 @@ import json
 import pandas as pd
 import re
 from OpenOrchestrator.orchestrator_connection.connection import OrchestratorConnection
-
 import time
 from requests.auth import HTTPBasicAuth
+
 orchestrator_connection = OrchestratorConnection("AktbobGenererAktindsigter", os.getenv('OpenOrchestratorSQL'),os.getenv('OpenOrchestratorKey'), None,None)
 # ---- Henter assests og credentials -----
 KMDNovaURL = orchestrator_connection.get_constant("KMDNovaURL").value
