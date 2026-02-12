@@ -222,7 +222,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     for item in test_emails:
         email = item["Email"]
         Name = item["Name"]
-
+        Case_Number = item["CaseNumber"]
         payload = {
             "email": email,
             "b_1": Name  
@@ -238,7 +238,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
             )
 
             if response.status_code in (200, 201):
-                print(f" Survey sent to {email} (Case {case_number})")
+                print(f" Survey sent to {email} (Case {Case_Number})")
             else:
                 print(f"Failed for {email} | Status: {response.status_code}")
                 print(response.text)
