@@ -188,18 +188,13 @@ for case in Cases:
         print(f"Failed for case {case.get('CaseNumber')} ({case_uuid}): {e}")
 
 # ---- TEST EMAILS (override production list) ----
-test_emails = [
-    {
-        "Email": "ealum@aarhus.dk",
-        "CaseNumber": "TEST-001",
-        "Name": "Ea Lund Madsen"
-    },
-    {
-        "Email": "krk@aarhus.dk",
-        "CaseNumber": "TEST-002",
-        "Name": "Kristian Lei Kaltoft"
-    }
-]
+    test_emails = [
+        {
+            "Email": "gujc@aarhus.dk",
+            "CaseNumber": "TEST-001",
+            "Name": "Gustav Chatterton"
+        }
+    ]
 
 # ----- Opretter timestamps ------ 
 current_ts = int(time.time())      # current epoch time in seconds

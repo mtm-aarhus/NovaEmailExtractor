@@ -197,20 +197,15 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     # ---- TEST EMAILS (override production list) ----
     test_emails = [
         {
-            "Email": "ealum@aarhus.dk",
+            "Email": "gujc@aarhus.dk",
             "CaseNumber": "TEST-001",
-            "Name": "Ea Lund Madsen"
-        },
-        {
-            "Email": "krk@aarhus.dk",
-            "CaseNumber": "TEST-002",
-            "Name": "Kristian Lei Kaltoft"
+            "Name": "Gustav Chatterton"
         }
     ]
 
     # ----- Opretter timestamps ------ 
     current_ts = int(time.time())      # current epoch time in seconds
-    ts_plus_5_min = current_ts + 2 * 60
+    ts_plus_15_min = current_ts + 15 * 60
     ts_plus_1_week = current_ts + 7 * 24 * 60 * 60
     distributionTs = 1
     print(ts_plus_5_min)
@@ -221,7 +216,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     params = {
         "distributionTs": distributionTs,
-        "reminder1Ts": ts_plus_5_min
+        "reminder1Ts": ts_plus_15_min
     }
 
     for item in test_emails:
