@@ -197,9 +197,14 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     # ---- TEST EMAILS (override production list) ----
     test_emails = [
         {
-            "Email": "Gujc@aarhus.dk",
+            "Email": "ealum@aarhus.dk",
             "CaseNumber": "TEST-001",
-            "Name": "Gustav Chatterton"
+            "Name": "Ea Lund Madsen"
+        },
+        {
+            "Email": "krk@aarhus.dk",
+            "CaseNumber": "TEST-002",
+            "Name": "Kristian Lei Kaltoft"
         }
     ]
 
