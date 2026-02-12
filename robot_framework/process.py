@@ -208,7 +208,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     ts_plus_15_min = current_ts + 15 * 60
     ts_plus_1_week = current_ts + 7 * 24 * 60 * 60
     distributionTs = 1
-    print(ts_plus_5_min)
+    print(ts_plus_15_min)
     print(ts_plus_1_week)
 
     # --- endpoint ---
