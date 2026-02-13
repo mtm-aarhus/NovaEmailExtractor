@@ -172,7 +172,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                         if emails:
                             email = emails[0]  # take only the first email
 
-                            print(f"CaseNumber: {case.get('CaseNumber')} | Email: {email}| Name: {IndsenderName}")
+                            orchestrator_connection.log_info(f"CaseNumber: {case.get('CaseNumber')} | Email: {email}| Name: {IndsenderName}")
 
                             all_emails.append({
                                 "CaseUuid": case_uuid,
