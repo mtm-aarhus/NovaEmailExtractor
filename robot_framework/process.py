@@ -18,6 +18,20 @@ from requests.auth import HTTPBasicAuth
 def process(orchestrator_connection: OrchestratorConnection, queue_element: QueueElement | None = None) -> None:
     
     orchestrator_connection.log_trace("Running process.")
+
+    # ---- Run only on odd ISO weeks (ulige uger) ----
+    current_week = datetime.now().isocalendar().week
+
+    if current_week % 2 == 0:
+        orchestrator_connection.log_info(
+            f"Skipping run - week {current_week} is an even week."
+        )
+        return
+
+    orchestrator_connection.log_info(
+        f"Running - week {current_week} is an odd week."
+    )
+
     # ---- Henter assests og credentials -----
     KMDNovaURL = orchestrator_connection.get_constant("KMDNovaURL").value
     SurveyXact = orchestrator_connection.get_credential("SurveyXact")
