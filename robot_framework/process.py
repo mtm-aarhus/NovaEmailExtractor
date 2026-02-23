@@ -118,7 +118,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         print("Request Failed:", e)
 
 
-    EMAIL_REGEX = re.compile(r"[^\s@]+@[^\s@]+\.[^\s@]+",re.UNICODE)
+    EMAIL_REGEX = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
     all_emails = []
 
     # Now iterate through the casesUuid's and get the emails: 
@@ -167,6 +167,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                     if party.get("partyRole") == "IND":
                         contact_info = party.get("participantContactInformation", "")
                         IndsenderName = party.get("name")
+                        contact_info = re.sub(r"\[n\]|\n|\r", " ", contact_info)
                         emails = EMAIL_REGEX.findall(contact_info)
 
                         if emails:
@@ -206,12 +207,9 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     # ----- Opretter timestamps ------ 
     current_ts = int(time.time())      # current epoch time in seconds
-    ts_plus_3_min = current_ts + 3 * 60
     ts_plus_1_week = current_ts + 7 * 24 * 60 * 60
-    ts_plus_1_day = current_ts + 1 * 24 * 60 * 60
     distributionTs = 1
-    print(ts_plus_3_min)
-    print(ts_plus_1_week)
+
 
     # --- endpoint ---
     survey_url = "https://rest.survey-xact.dk/rest/surveys/1792115/respondents"
