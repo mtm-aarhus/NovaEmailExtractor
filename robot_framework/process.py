@@ -205,7 +205,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     # ----- Opretter timestamps ------ 
     current_ts = int(time.time())      # current epoch time in seconds
-    ts_plus_15_min = current_ts + 15 * 60
+    ts_plus_3_min = current_ts + 3 * 60
     ts_plus_1_week = current_ts + 7 * 24 * 60 * 60
     ts_plus_1_day = current_ts + 1 * 24 * 60 * 60
     distributionTs = 1
@@ -217,7 +217,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     params = {
         "distributionTs": distributionTs,
-        "reminder1Ts": ts_plus_1_day
+        "reminder1Ts": ts_plus_3_min
     }
 
     for item in test_emails:
