@@ -194,6 +194,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         except requests.exceptions.RequestException as e:
             print(f"Failed for case {case.get('CaseNumber')} ({case_uuid}): {e}")
 
+    print(f"\nTotal emails collected: {len(all_emails)}")
     # ---- TEST EMAILS (override production list) ----
     test_emails = [
         {
@@ -217,7 +218,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     params = {
         "distributionTs": distributionTs,
-        "reminder1Ts": ts_plus_3_min
+        "reminder1Ts": ts_plus_1_week
     }
 
     for item in test_emails:
