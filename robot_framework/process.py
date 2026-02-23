@@ -197,13 +197,6 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     print(f"\nTotal emails collected: {len(all_emails)}")
     # ---- TEST EMAILS (override production list) ----
-    test_emails = [
-        {
-            "Email": "gujc@aarhus.dk",
-            "CaseNumber": "TEST-001",
-            "Name": "Gustav Chatterton"
-        }
-    ]
 
     # ----- Opretter timestamps ------ 
     current_ts = int(time.time())      # current epoch time in seconds
@@ -219,7 +212,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         "reminder1Ts": ts_plus_1_week
     }
 
-    for item in test_emails:
+    for item in all_emails:
         email = item["Email"]
         Name = item["Name"]
         Case_Number = item["CaseNumber"]
