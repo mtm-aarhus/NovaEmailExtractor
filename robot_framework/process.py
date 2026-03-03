@@ -192,6 +192,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                             all_emails.append({
                                 "CaseUuid": case_uuid,
                                 "CaseNumber": case.get("CaseNumber"),
+                                "CaseTitle": case.get("CaseTitle"),
                                 "Email": email,
                                 "Name":IndsenderName
                             })
@@ -230,10 +231,12 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         email = item["Email"]
         Name = item["Name"]
         Case_Number = item["CaseNumber"]
+        Case_Title = item["CaseTitle"]
         payload = {
             "email": email,
             "b_1": Name,
-            "b_2": Case_Number
+            "b_2": Case_Number,
+            "b_3": Case_Title
         }
 
         try:
