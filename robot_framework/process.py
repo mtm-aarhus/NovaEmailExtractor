@@ -187,7 +187,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
                         if emails:
                             email = emails[0]  # take only the first email
             
-                            orchestrator_connection.log_info(f"CaseNumber: {case.get('CaseNumber')} | Email: {email}| Name: {IndsenderName}")
+                            orchestrator_connection.log_info(f"CaseNumber: {case.get('CaseNumber')} | Email: {email}| Name: {IndsenderName} | Titel: {case.get("CaseTitle")}")
 
                             all_emails.append({
                                 "CaseUuid": case_uuid,
@@ -212,7 +212,14 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     print(f"\nTotal emails collected: {len(all_emails)}")
     # ---- TEST EMAILS (override production list) ----
-
+    test_emails = [
+        {
+            "Email": "gujc@aarhus.dk",
+            "CaseNumber": "S2021-456011",
+            "Name": "Gustav Chatterton",
+            "CaseTitle": "TEST - Ejendom uden ejendomsnr."
+        }
+    ]
     # ----- Opretter timestamps ------ 
     current_ts = int(time.time())      # current epoch time in seconds
     ts_plus_1_week = current_ts + 7 * 24 * 60 * 60
@@ -227,7 +234,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         "reminder1Ts": ts_plus_1_week
     }
 
-    for item in all_emails:
+    for item in test_emails:
         email = item["Email"]
         Name = item["Name"]
         Case_Number = item["CaseNumber"]
