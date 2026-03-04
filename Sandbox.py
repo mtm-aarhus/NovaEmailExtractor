@@ -191,11 +191,11 @@ for case in Cases:
     test_emails = [
         {
             "Email": "gujc@aarhus.dk",
-            "CaseNumber": "TEST-001",
-            "Name": "Gustav Chatterton"
+            "CaseNumber": "S2021-456011",
+            "Name": "Gustav Chatterton",
+            "CaseTitle": "TEST - Ejendom uden ejendomsnr."
         }
     ]
-
 # ----- Opretter timestamps ------ 
 current_ts = int(time.time())      # current epoch time in seconds
 ts_plus_5_min = current_ts + 2 * 60

@@ -22,15 +22,15 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
     # ---- Run only on odd ISO weeks (ulige uger) ----
     current_week = datetime.now().isocalendar().week
 
-    # if current_week % 2 == 0:
-    #     orchestrator_connection.log_info(
-    #         f"Skipping run - week {current_week} is an even week."
-    #     )
-    #     return
+    if current_week % 2 == 0:
+        orchestrator_connection.log_info(
+            f"Skipping run - week {current_week} is an even week."
+        )
+        return
 
-    # orchestrator_connection.log_info(
-    #     f"Running - week {current_week} is an odd week."
-    # )
+    orchestrator_connection.log_info(
+        f"Running - week {current_week} is an odd week."
+    )
 
     # ---- Henter assests og credentials -----
     KMDNovaURL = orchestrator_connection.get_constant("KMDNovaURL").value
@@ -212,14 +212,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
 
     print(f"\nTotal emails collected: {len(all_emails)}")
     # ---- TEST EMAILS (override production list) ----
-    test_emails = [
-        {
-            "Email": "gujc@aarhus.dk",
-            "CaseNumber": "S2021-456011",
-            "Name": "Gustav Chatterton",
-            "CaseTitle": "TEST - Ejendom uden ejendomsnr."
-        }
-    ]
+    
     # ----- Opretter timestamps ------ 
     current_ts = int(time.time())      # current epoch time in seconds
     ts_plus_1_week = current_ts + 7 * 24 * 60 * 60
@@ -234,7 +227,7 @@ def process(orchestrator_connection: OrchestratorConnection, queue_element: Queu
         "reminder1Ts": ts_plus_1_week
     }
 
-    for item in test_emails:
+    for item in all_emails:
         email = item["Email"]
         Name = item["Name"]
         Case_Number = item["CaseNumber"]
